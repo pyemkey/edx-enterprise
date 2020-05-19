@@ -14,6 +14,14 @@ Change Log
 Unreleased
 --------------------
 
+[3.2.15] - 2020-05-26
+---------------------
+
+* Updating the catalog preview URL to use the Catalog Service
+
+
+--------------------
+
 [3.2.14] - 2020-05-19
 ---------------------
 
