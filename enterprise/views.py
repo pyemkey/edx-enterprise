@@ -42,6 +42,7 @@ from enterprise.forms import (
     ENTERPRISE_LOGIN_SUBTITLE,
     ENTERPRISE_LOGIN_TITLE,
     ENTERPRISE_SELECT_SUBTITLE,
+    ERROR_MESSAGE_FOR_SLUG_LOGIN,
     EnterpriseLoginForm,
     EnterpriseSelectionForm,
 )
@@ -65,7 +66,6 @@ from enterprise.utils import (
     get_enterprise_customer_or_404,
     get_enterprise_customer_user,
     get_program_type_description,
-    get_provider_login_url,
     is_course_run_enrollable,
     track_enrollment,
     ungettext_min_max,
@@ -87,6 +87,10 @@ try:
 except ImportError:
     user_authn_cookies = None
 
+try:
+    from openedx.features.enterprise_support.utils import get_provider_login_url
+except ImportError:
+    get_provider_login_url = None
 
 LOGGER = getLogger(__name__)
 BASKET_URL = urljoin(settings.ECOMMERCE_PUBLIC_URL_ROOT, '/basket/add/')
@@ -885,10 +889,16 @@ class EnterpriseLoginView(FormView):
         """
         If the form is valid, redirect to the third party auth login page.
         """
-        provider_id = get_enterprise_customer_idp(form.cleaned_data['enterprise_slug']).provider_id
+        # This case will only happened when we try to run the edx-enterprise independently.
+        if not get_provider_login_url:
+            return JsonResponse({'errors': [ERROR_MESSAGE_FOR_SLUG_LOGIN]}, status=400)
+
         return JsonResponse(
             {
-                "url": get_provider_login_url(self.request, provider_id)
+                "url": get_provider_login_url(
+                    self.request,
+                    get_enterprise_customer_idp(form.cleaned_data['enterprise_slug']).provider_id
+                )
             }
         )
 

@@ -382,7 +382,7 @@ class EnterpriseFormViewTestCase(TestCase):
         tpl = tempfile.NamedTemporaryFile(
             prefix='test_template.',
             suffix=".html",
-            dir=settings.REPO_ROOT + '/templates/enterprise/',
+            dir=os.path.join(settings.REPO_ROOT, 'templates/enterprise/'),
             delete=False,
         )
         tpl.close()

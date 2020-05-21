@@ -143,34 +143,6 @@ def get_idp_choices():
     return None
 
 
-def get_provider_login_url(request, provider_id):
-    """
-    Return the given provider's login URL.
-    """
-    try:
-        from third_party_auth import pipeline
-    except ImportError as exception:
-        LOGGER.warning("Could not import Pipeline from third_party_auth")
-        LOGGER.warning(exception)
-        pipeline = None  # pylint: disable=redefined-outer-name
-
-    try:
-        from student.helpers import get_next_url_for_login_page
-    except ImportError as exception:
-        LOGGER.warning("Could not import get_next_url_for_login_page from student.helpers")
-        LOGGER.warning(exception)
-        get_next_url_for_login_page = None  # pylint: disable=redefined-outer-name
-
-    third_auth_login_page = ""
-    if pipeline and get_next_url_for_login_page:
-        third_auth_login_page = pipeline.get_login_url(
-            provider_id,
-            pipeline.AUTH_ENTRY_LOGIN,
-            redirect_url=get_next_url_for_login_page(request)
-        )
-    return third_auth_login_page
-
-
 def get_all_field_names(model, excluded=None):
     """
     Return all fields' names from a model. Filter out the field names present in `excluded`.
@@ -459,10 +431,7 @@ def get_enterprise_customer_idp(enterprise_customer_slug):
         'enterprise',
         'EnterpriseCustomerIdentityProvider'
     )
-    try:
-        return EnterpriseCustomerIdentityProvider.objects.get(enterprise_customer__slug=enterprise_customer_slug)
-    except EnterpriseCustomerIdentityProvider.DoesNotExist:
-        return None
+    return EnterpriseCustomerIdentityProvider.objects.filter(enterprise_customer__slug=enterprise_customer_slug).first()
 
 
 def get_course_track_selection_url(course_run, query_parameters):

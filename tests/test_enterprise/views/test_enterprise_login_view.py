@@ -12,12 +12,7 @@ from pytest import mark
 from django.test import Client
 from django.urls import reverse
 
-from enterprise.forms import (
-    ENTERPRISE_LOGIN_SUBTITLE,
-    ENTERPRISE_LOGIN_TITLE,
-    ERROR_MESSAGE_FOR_WRONG_ENTERPRISE_CUSTOMER,
-    ERROR_MESSAGE_FOR_WRONG_IDP,
-)
+from enterprise.forms import ENTERPRISE_LOGIN_SUBTITLE, ENTERPRISE_LOGIN_TITLE, ERROR_MESSAGE_FOR_SLUG_LOGIN
 from test_utils import EnterpriseFormViewTestCase
 from test_utils.factories import EnterpriseCustomerFactory, EnterpriseCustomerIdentityProviderFactory
 
@@ -48,24 +43,24 @@ class TestEnterpriseLoginView(EnterpriseFormViewTestCase):
         assert response.context['enterprise_login_subtitle_message'] == ENTERPRISE_LOGIN_SUBTITLE
         assert list(response.context['form'].fields.keys())[0] == 'enterprise_slug'
 
-    def _assert_post_request(self, enterprise_slug, status_code, expected_response):
+    def _assert_post_request(self, enterprise_slug, expected_status_code, expected_response):
         """
         Assert the POST request.
         """
         post_data = {
             'enterprise_slug': enterprise_slug
         }
-        if status_code == 200:
+        if expected_status_code == 200:
             with mock.patch(IDENTITY_PROVIDER_PATH) as mock_identity_provider:
                 with mock.patch(GET_PROVIDER_LOGIN_URL_PATH) as mock_get_provider_login_url:
                     mock_identity_provider.return_value = 'some-dummy-provider'
                     mock_get_provider_login_url.return_value = expected_response
                     response = self.client.post(self.url, post_data)
-                    assert response.status_code == status_code
+                    assert response.status_code == expected_status_code
                     assert response.json().get('url') == expected_response
         else:
             response = self.client.post(self.url, post_data)
-            assert response.status_code == status_code
+            assert response.status_code == expected_status_code
             assert response.json().get('errors') == expected_response
 
     @ddt.unpack
@@ -76,7 +71,7 @@ class TestEnterpriseLoginView(EnterpriseFormViewTestCase):
             'create_enterprise_customer_idp': False,
             'enable_slug_login': False,
             'enterprise_slug': 'incorrect_slug',
-            'expected_response': [ERROR_MESSAGE_FOR_WRONG_ENTERPRISE_CUSTOMER],
+            'expected_response': [ERROR_MESSAGE_FOR_SLUG_LOGIN],
             'status_code': 400,
         },
         # Raise error if enable_slug_login is not enable.
@@ -85,7 +80,7 @@ class TestEnterpriseLoginView(EnterpriseFormViewTestCase):
             'create_enterprise_customer_idp': False,
             'enable_slug_login': False,
             'enterprise_slug': 'ec_slug',
-            'expected_response': [ERROR_MESSAGE_FOR_WRONG_ENTERPRISE_CUSTOMER],
+            'expected_response': [ERROR_MESSAGE_FOR_SLUG_LOGIN],
             'status_code': 400,
         },
         # Raise error if enterprise_customer is not linked to an idp.
@@ -94,7 +89,7 @@ class TestEnterpriseLoginView(EnterpriseFormViewTestCase):
             'create_enterprise_customer_idp': False,
             'enable_slug_login': True,
             'enterprise_slug': 'ec_slug_other',
-            'expected_response': [ERROR_MESSAGE_FOR_WRONG_IDP],
+            'expected_response': [ERROR_MESSAGE_FOR_SLUG_LOGIN],
             'status_code': 400,
         },
         # Raise error if enterprise_customer is linked to an idp which not in the Registry Class.
@@ -103,7 +98,7 @@ class TestEnterpriseLoginView(EnterpriseFormViewTestCase):
             'create_enterprise_customer_idp': True,
             'enable_slug_login': True,
             'enterprise_slug': 'ec_slug_other',
-            'expected_response': [ERROR_MESSAGE_FOR_WRONG_IDP],
+            'expected_response': [ERROR_MESSAGE_FOR_SLUG_LOGIN],
             'status_code': 400,
         },
         # Valid request.

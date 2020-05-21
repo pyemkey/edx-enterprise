@@ -18,10 +18,9 @@ ENTERPRISE_LOGIN_TITLE = _(u'Enter the organization name')
 ENTERPRISE_LOGIN_SUBTITLE = _(
     u'Have an account through your company, school, or organization? Enter your organization’s name below to sign in.'
 )
-ERROR_MESSAGE_FOR_WRONG_ENTERPRISE_CUSTOMER = _(
-    "Either you have entered the wrong name or your company hasn't enabled the login."
+ERROR_MESSAGE_FOR_SLUG_LOGIN = _(
+    "The attempt to login with this organization name was not successful. Please try again, or contact our support."
 )
-ERROR_MESSAGE_FOR_WRONG_IDP = _("No provider is linked to your company/organization. Kindly contact admin.")
 
 
 class EnterpriseSelectionForm(forms.Form):
@@ -63,7 +62,7 @@ class EnterpriseSelectionForm(forms.Form):
 
 class EnterpriseLoginForm(forms.Form):
     """
-    Enterprise Login Form.
+    Enterprise Slug Login Form.
     """
 
     enterprise_slug = forms.CharField(label='Company Name')
@@ -79,14 +78,14 @@ class EnterpriseLoginForm(forms.Form):
         try:
             enterprise_customer = EnterpriseCustomer.objects.get(slug=enterprise_slug)
         except EnterpriseCustomer.DoesNotExist:
-            raise forms.ValidationError(ERROR_MESSAGE_FOR_WRONG_ENTERPRISE_CUSTOMER)
+            raise forms.ValidationError(ERROR_MESSAGE_FOR_SLUG_LOGIN)
 
         # verify that enterprise customer has enabled the slug login feature.
         if not enterprise_customer.enable_slug_login:
-            raise forms.ValidationError(ERROR_MESSAGE_FOR_WRONG_ENTERPRISE_CUSTOMER)
+            raise forms.ValidationError(ERROR_MESSAGE_FOR_SLUG_LOGIN)
 
         # verify that a valid idp is linked to the enterprise customer.
         enterprise_customer_idp = get_enterprise_customer_idp(enterprise_slug)
         if enterprise_customer_idp is None or enterprise_customer_idp.identity_provider is None:
-            raise forms.ValidationError(ERROR_MESSAGE_FOR_WRONG_IDP)
+            raise forms.ValidationError(ERROR_MESSAGE_FOR_SLUG_LOGIN)
         return cleaned_data
